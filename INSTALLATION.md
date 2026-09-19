@@ -51,7 +51,22 @@ gh release download v1.24.3-internetisalie.1 \
 cd "$HOME/.local/lib/openchamber-internetisalie.1"
 sha256sum -c OpenChamber-1.24.3-internetisalie.1-linux-x86_64.tar.gz.sha256
 tar -xzf OpenChamber-1.24.3-internetisalie.1-linux-x86_64.tar.gz
+mkdir -p "$HOME/.local/bin"
+test ! -L "$HOME/.local/bin/openchamber-internetisalie" || \
+  unlink "$HOME/.local/bin/openchamber-internetisalie"
+cat > "$HOME/.local/bin/openchamber-internetisalie" <<'EOF'
+#!/bin/sh
+exec "$HOME/.local/lib/openchamber-internetisalie.1/OpenChamber-1.24.3-internetisalie.1-linux-x86_64/openchamber" --disable-setuid-sandbox "$@"
+EOF
+chmod 755 "$HOME/.local/bin/openchamber-internetisalie"
 ```
+
+The launcher disables only Chromium's setuid bootstrap sandbox and uses the
+kernel's unprivileged user-namespace and seccomp sandboxes instead. Verify that
+`unshare --user --map-root-user true` succeeds before using it. On Ubuntu,
+`kernel.apparmor_restrict_unprivileged_userns` must be `0` or an appropriate
+AppArmor profile must permit the application. Do not use `--no-sandbox`, which
+disables Chromium's sandbox entirely.
 
 In OpenChamber's OpenCode CLI settings, select
 `~/.local/bin/opencode-internetisalie`. The packaged stock OpenCode CLI remains
