@@ -1,40 +1,77 @@
-# openchamber-pty-bridge
+# OpenChamber PTY Bridge
 
-Read-only OpenChamber integration for PTYs created by [`opencode-pty`](https://www.npmjs.com/package/opencode-pty).
+A native, read-only OpenChamber extension for viewing PTYs created by
+[`@internetisalie/opencode-pty`](https://github.com/internetisalie/opencode-pty).
 
-## Installation boundary
+The extension is installed from Git. It ships its browser bundle in
+`panel/main.js` because OpenChamber does not install dependencies or compile an
+extension during installation.
 
-Two separate integrations are required:
+## Install
 
-```text
-OpenCode side:    opencode-pty-bridge
-OpenChamber side: openchamber-pty-bridge
+1. In OpenChamber `>=1.24.3`, open **Settings -> Extensions**.
+2. Install `git@github.com:internetisalie/openchamber-pty-bridge.git`.
+3. Review and approve its read-only OpenCode access.
+4. Configure the separate OpenCode plugin in `opencode.json`:
+
+   ```json
+   {
+     "$schema": "https://opencode.ai/config.json",
+     "plugin": ["@internetisalie/opencode-pty-bridge@0.1.0"]
+   }
+   ```
+
+`@internetisalie/opencode-pty-bridge` transitively loads
+`@internetisalie/opencode-pty`. Do not register both packages, or OpenCode will
+receive duplicate `pty_*` tools.
+
+See [INSTALLATION.md](./INSTALLATION.md) for compatibility, verification, and
+upgrade details.
+
+## Security boundary
+
+The manifest grants one OpenCode plugin ID, `opencode-pty-bridge`, and only the
+`GET` method. OpenChamber supplies the configured runtime transport and
+authentication to the host-side request; this extension never receives
+credentials and never contacts a guessed localhost URL.
+
+The UI can read only:
+
+- bridge capability metadata;
+- PTYs whose `parentSessionId` exactly matches the current OpenChamber session;
+- output for the selected PTY.
+
+It cannot spawn, write to, resize, kill, or clean up a PTY. Commands, arguments,
+working directories, and output are never logged.
+
+## Development
+
+Requirements: Bun 1.3.14 and Node.js 22 or newer.
+
+```bash
+bun install --frozen-lockfile
+bun run typecheck
+bun test
+bun run build
+bun run validate:manifest
+git diff --exit-code -- panel/main.js
 ```
 
-Install `opencode-pty-bridge` in OpenCode. It already loads `opencode-pty`, so do not register `opencode-pty` separately.
+The source intentionally uses `@openchamber/sdk` 1.24.2. That public SDK has
+the UI kit and `connectHost`, but predates `openCodeRequest`. `src/protocol.ts`
+therefore implements only the additive `opencode-request` call with the SDK's
+exported channel, API version, timeout, path validation, and error semantics.
 
-OpenChamber does not install or inject the OpenCode plugin. It detects the plugin through the authenticated OpenCode capability endpoint and uses the same configured runtime transport for managed and external OpenCode servers.
+## Runtime behavior
 
-## Current host status
+The extension consumes OpenCode bridge schema version 1. It polls only while
+its panel is visible, keeps the last successful data through transient errors,
+and clears data when the current host session changes or the frame unloads.
+Output is kept separately per PTY and bounded to a UTF-8-safe 512 KiB suffix.
 
-OpenChamber does not yet expose a third-party UI plugin host. The integration is therefore implemented as first-party code in the sibling `openchamber` checkout. This repository remains the package home, but it cannot provide an independently installable package until OpenChamber defines a versioned plugin-loading contract.
+Native OpenChamber extensions are currently supported by the web and desktop
+applications only.
 
-The first-party integration adds a **PTYs** section to the current session's Work Status panel. It filters sessions by the authoritative `parentSessionId` field and opens output in a read-only terminal viewer. It does not expose spawn, input, resize, kill, or cleanup controls.
+## License
 
-## API contract
-
-The integration consumes schema version 1 from:
-
-```text
-GET /api/plugins/opencode-pty-bridge
-GET /api/plugins/opencode-pty-bridge/sessions
-GET /api/plugins/opencode-pty-bridge/sessions/:id/output?after=<revision>
-```
-
-Only a `404` from the capability endpoint means the bridge is absent. Authentication, network, malformed-response, and server failures remain distinct from a successful empty PTY list.
-
-The OpenCode-side bridge currently needs a release of `opencode-pty` containing `PTYSessionInfo.parentSessionId` before its published dependency can expose this contract.
-
-## Installation
-
-See [INSTALLATION.md](./INSTALLATION.md) for the local development stack, release order, end-user installation, verification, and rollback process. The runbook distinguishes commands that work from sibling checkouts today from the package installation path that becomes available after the required releases.
+MIT

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@internetisalie/openchamber-pty-bridge",
+  "version": "0.1.0",
+  "description": "Read-only OpenChamber panel for PTYs owned by the current OpenCode session",
+  "author": "internetisalie",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/internetisalie/openchamber-pty-bridge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/internetisalie/openchamber-pty-bridge/issues"
+  },
+  "homepage": "https://github.com/internetisalie/openchamber-pty-bridge#readme",
+  "openchamber": {
+    "apiVersion": 1,
+    "engines": {
+      "openchamber": ">=1.24.3"
+    },
+    "contributes": {
+      "panel": {
+        "id": "openchamber-pty-bridge",
+        "name": "Agent PTYs",
+        "icon": "terminal-box",
+        "entry": "panel/index.html"
+      },
+      "openCode": {
+        "plugins": [
+          {
+            "id": "opencode-pty-bridge",
+            "methods": ["GET"]
+          }
+        ]
+      }
+    }
+  },
+  "scripts": {
+    "build": "bun build --outfile=./panel/main.js --target=browser --format=iife --minify ./src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "validate:manifest": "bun ./scripts/validate-manifest.ts",
+    "check:build": "bun run build && git diff --exit-code -- panel/main.js"
+  },
+  "devDependencies": {
+    "@openchamber/sdk": "1.24.2",
+    "@types/bun": "^1.3.8",
+    "typescript": "^5.9.3"
+  }
+}

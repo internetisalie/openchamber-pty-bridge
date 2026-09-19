@@ -1,1 +1,3 @@
 .agents
+node_modules
+coverage
