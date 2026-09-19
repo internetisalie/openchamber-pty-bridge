@@ -9,24 +9,15 @@ extension during installation.
 
 ## Install
 
-1. In OpenChamber `>=1.24.3`, open **Settings -> Extensions**.
-2. Install `git@github.com:internetisalie/openchamber-pty-bridge.git`.
-3. Review and approve its read-only OpenCode access.
-4. Configure the separate OpenCode plugin in `opencode.json`:
+The complete setup has five pieces: custom OpenCode, `opencode-pty`, the
+OpenCode bridge, OpenChamber, and this Git-installed extension. Follow
+[INSTALLATION.md](./INSTALLATION.md) for the exact versions, one-shot GitHub
+Packages authentication, tokenless systemd service, Linux sandbox launcher,
+extension approval, verification, and upgrade procedure.
 
-   ```json
-   {
-     "$schema": "https://opencode.ai/config.json",
-     "plugin": ["@internetisalie/opencode-pty-bridge@0.1.0"]
-   }
-   ```
-
-`@internetisalie/opencode-pty-bridge` transitively loads
-`@internetisalie/opencode-pty`. Do not register both packages, or OpenCode will
-receive duplicate `pty_*` tools.
-
-See [INSTALLATION.md](./INSTALLATION.md) for compatibility, verification, and
-upgrade details.
+`@internetisalie/opencode-pty-bridge` installs and loads
+`@internetisalie/opencode-pty` transitively. Never list both in OpenCode's
+plugin config, or OpenCode receives duplicate `pty_*` tools.
 
 ## Security boundary
 
