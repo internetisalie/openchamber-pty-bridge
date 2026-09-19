@@ -59,15 +59,27 @@ only as a fallback and does not override this explicit setting.
 
 ## OpenCode
 
-Configure npm for GitHub Packages and provide a token with `read:packages` in
-the environment used to start OpenCode:
+Configure npm for GitHub Packages:
 
 ```ini
 @internetisalie:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
 ```
 
-Add only the bridge package to `opencode.json` or `opencode.jsonc`:
+Use the token only for a one-shot package installation. This command installs
+the package into OpenCode's versioned cache and adds it to the global config:
+
+```bash
+NODE_AUTH_TOKEN="$(gh auth token)" \
+  opencode-internetisalie plugin @internetisalie/opencode-pty-bridge@0.1.0 --global
+```
+
+Do not set `NODE_AUTH_TOKEN` in a long-running OpenCode systemd service. Once
+the package is cached, start OpenCode normally without the token so agents and
+their subprocesses cannot inherit it. Repeat the one-shot command when changing
+the pinned bridge version.
+
+The resulting `opencode.json` or `opencode.jsonc` entry is:
 
 ```json
 {
@@ -76,7 +88,7 @@ Add only the bridge package to `opencode.json` or `opencode.jsonc`:
 }
 ```
 
-Restart OpenCode after changing its plugin configuration. The bridge
+Restart OpenCode after installation. The bridge
 transitively loads `@internetisalie/opencode-pty`; registering that package as a
 second plugin creates duplicate `pty_*` tools and must be avoided.
 
