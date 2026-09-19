@@ -24,7 +24,48 @@ Managed and external OpenCode runtimes use the same host-provided authenticated
 transport. No extra port, callback listener, or browser-visible credential is
 needed.
 
+## Linux binaries
+
+Install the custom OpenCode binary independently:
+
+```bash
+mkdir -p "$HOME/.local/lib/opencode-internetisalie.2" "$HOME/.local/bin"
+gh release download v1.18.31-internetisalie.2 \
+  --repo internetisalie/opencode \
+  --pattern opencode-linux-x64-baseline.tar.gz \
+  --dir "$HOME/.local/lib/opencode-internetisalie.2"
+tar -xzf "$HOME/.local/lib/opencode-internetisalie.2/opencode-linux-x64-baseline.tar.gz" \
+  -C "$HOME/.local/lib/opencode-internetisalie.2"
+ln -sfn "$HOME/.local/lib/opencode-internetisalie.2/opencode" \
+  "$HOME/.local/bin/opencode-internetisalie"
+```
+
+Install OpenChamber independently from its GitHub-built tarball:
+
+```bash
+mkdir -p "$HOME/.local/lib/openchamber-internetisalie.1"
+gh release download v1.24.3-internetisalie.1 \
+  --repo internetisalie/openchamber \
+  --pattern 'OpenChamber-1.24.3-internetisalie.1-linux-x86_64.tar.gz*' \
+  --dir "$HOME/.local/lib/openchamber-internetisalie.1"
+cd "$HOME/.local/lib/openchamber-internetisalie.1"
+sha256sum -c OpenChamber-1.24.3-internetisalie.1-linux-x86_64.tar.gz.sha256
+tar -xzf OpenChamber-1.24.3-internetisalie.1-linux-x86_64.tar.gz
+```
+
+In OpenChamber's OpenCode CLI settings, select
+`~/.local/bin/opencode-internetisalie`. The packaged stock OpenCode CLI remains
+only as a fallback and does not override this explicit setting.
+
 ## OpenCode
+
+Configure npm for GitHub Packages and provide a token with `read:packages` in
+the environment used to start OpenCode:
+
+```ini
+@internetisalie:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+```
 
 Add only the bridge package to `opencode.json` or `opencode.jsonc`:
 
