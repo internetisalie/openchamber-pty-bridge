@@ -1,14 +1,13 @@
 # Installation
 
-This setup has five independently versioned runtime pieces:
+This setup has four independently versioned runtime pieces:
 
 | # | Piece | Version/source | Installation role |
 |---|---|---|---|
 | 1 | Custom OpenCode | `1.18.31-internetisalie.2` | Headless OpenCode server with authenticated plugin HTTP routes |
 | 2 | `opencode-pty` | `@internetisalie/opencode-pty@0.4.1` | PTY tools and process ownership |
 | 3 | OpenCode PTY bridge | `@internetisalie/opencode-pty-bridge@0.1.0` | Loads piece 2 and exposes its read-only HTTP API |
-| 4 | OpenChamber | `1.24.3-internetisalie.1` | Web/desktop extension host and scoped OpenCode proxy |
-| 5 | OpenChamber PTY bridge | `git@github.com:internetisalie/openchamber-pty-bridge.git` | Read-only **Agent PTYs** panel |
+| 4 | OpenChamber | `1.24.3-internetisalie.2` | Web/desktop host with built-in read-only **Agent PTYs** output |
 
 Piece 2 is installed as a dependency of piece 3. Do not also register it in
 OpenCode's plugin list; doing so creates duplicate `pty_*` tools.
@@ -109,14 +108,14 @@ bridge version changes.
 ## 4. Install OpenChamber
 
 ```bash
-mkdir -p "$HOME/.local/lib/openchamber-internetisalie.1"
-gh release download v1.24.3-internetisalie.1 \
+mkdir -p "$HOME/.local/lib/openchamber-internetisalie.2"
+gh release download v1.24.3-internetisalie.2 \
   --repo internetisalie/openchamber \
-  --pattern 'OpenChamber-1.24.3-internetisalie.1-linux-x86_64.tar.gz*' \
-  --dir "$HOME/.local/lib/openchamber-internetisalie.1"
-cd "$HOME/.local/lib/openchamber-internetisalie.1"
-sha256sum -c OpenChamber-1.24.3-internetisalie.1-linux-x86_64.tar.gz.sha256
-tar -xzf OpenChamber-1.24.3-internetisalie.1-linux-x86_64.tar.gz
+  --pattern 'OpenChamber-1.24.3-internetisalie.2-linux-x86_64.tar.gz*' \
+  --dir "$HOME/.local/lib/openchamber-internetisalie.2"
+cd "$HOME/.local/lib/openchamber-internetisalie.2"
+sha256sum -c OpenChamber-1.24.3-internetisalie.2-linux-x86_64.tar.gz.sha256
+tar -xzf OpenChamber-1.24.3-internetisalie.2-linux-x86_64.tar.gz
 ```
 
 ### Linux sandbox and launcher
@@ -143,7 +142,7 @@ cat > "$HOME/.local/bin/openchamber-internetisalie" <<'EOF'
 #!/bin/sh
 export OPENCODE_HOST="${OPENCODE_HOST:-http://127.0.0.1:4096}"
 export OPENCODE_SKIP_START="${OPENCODE_SKIP_START:-true}"
-exec "$HOME/.local/lib/openchamber-internetisalie.1/OpenChamber-1.24.3-internetisalie.1-linux-x86_64/openchamber" --disable-setuid-sandbox "$@"
+exec "$HOME/.local/lib/openchamber-internetisalie.2/OpenChamber-1.24.3-internetisalie.2-linux-x86_64/openchamber" --disable-setuid-sandbox "$@"
 EOF
 chmod 755 "$HOME/.local/bin/openchamber-internetisalie"
 ```
@@ -160,22 +159,22 @@ both tarballs in one npm transaction. Installing only the web tarball makes npm
 try to fetch the unpublished custom SDK version from the public registry.
 
 ```bash
-mkdir -p "$HOME/.local/lib/openchamber-web-internetisalie.1"
-gh release download v1.24.3-internetisalie.1 \
+mkdir -p "$HOME/.local/lib/openchamber-web-internetisalie.2"
+gh release download v1.24.3-internetisalie.2 \
   --repo internetisalie/openchamber \
-  --pattern 'openchamber-sdk-1.24.3-internetisalie.1.tgz' \
-  --pattern 'openchamber-web-1.24.3-internetisalie.1.tgz' \
-  --pattern 'openchamber-npm-packages-1.24.3-internetisalie.1.sha256' \
-  --dir "$HOME/.local/lib/openchamber-web-internetisalie.1"
-cd "$HOME/.local/lib/openchamber-web-internetisalie.1"
-sha256sum -c openchamber-npm-packages-1.24.3-internetisalie.1.sha256
+  --pattern 'openchamber-sdk-1.24.3-internetisalie.2.tgz' \
+  --pattern 'openchamber-web-1.24.3-internetisalie.2.tgz' \
+  --pattern 'openchamber-npm-packages-1.24.3-internetisalie.2.sha256' \
+  --dir "$HOME/.local/lib/openchamber-web-internetisalie.2"
+cd "$HOME/.local/lib/openchamber-web-internetisalie.2"
+sha256sum -c openchamber-npm-packages-1.24.3-internetisalie.2.sha256
 npm install --global --prefix "$HOME/.npm-global" \
-  "$PWD/openchamber-sdk-1.24.3-internetisalie.1.tgz" \
-  "$PWD/openchamber-web-1.24.3-internetisalie.1.tgz"
+  "$PWD/openchamber-sdk-1.24.3-internetisalie.2.tgz" \
+  "$PWD/openchamber-web-1.24.3-internetisalie.2.tgz"
 "$HOME/.npm-global/bin/openchamber" --version
 ```
 
-The expected version is `1.24.3-internetisalie.1`. The release job packs both
+The expected version is `1.24.3-internetisalie.2`. The release job packs both
 packages with Bun so the web package's `workspace:*` SDK dependency is rewritten
 to that exact version.
 
@@ -229,20 +228,13 @@ variables from `startup.env` and select
 `~/.local/bin/opencode-internetisalie` in OpenChamber's OpenCode CLI settings.
 Do not use both modes simultaneously.
 
-## 5. Install the OpenChamber extension
+### Built-in Agent PTYs
 
-1. Start OpenChamber with `openchamber-internetisalie`.
-2. Open **Settings -> Extensions**.
-3. Choose the Git/SSH installation option.
-4. Enter `git@github.com:internetisalie/openchamber-pty-bridge.git`.
-5. Confirm the extension identity **Agent PTYs**.
-6. Approve the requested `opencode` capability. Its scope is exactly plugin ID
-   `opencode-pty-bridge` with method `GET`.
-7. Open an OpenCode session and select **Agent PTYs** from the right-hand context
-   rail.
-
-The Git repository is the installation unit. OpenChamber does not run
-`bun install` or build the extension source.
+OpenChamber `1.24.3-internetisalie.2` includes **Agent PTYs** in the work-status
+panel, so no separate OpenChamber extension is required. Start OpenChamber, open
+an OpenCode session, and create a PTY through the normal `pty_spawn` tool. The
+section appears when the OpenCode PTY bridge is available. It can be reordered
+or hidden with the other work-status sections.
 
 ## Verify
 
@@ -258,7 +250,7 @@ If the OpenCode server has password authentication enabled, add its normal
 Basic authentication options to these requests rather than disabling auth.
 
 Create a PTY through the normal `pty_spawn` OpenCode tool in the current
-session. The **Agent PTYs** panel should:
+session. The **Agent PTYs** work-status section should:
 
 - show only PTYs whose `parentSessionId` exactly equals the current session ID;
 - place running and killing PTYs before exited and killed PTYs;
@@ -280,9 +272,9 @@ Upgrade pieces 1 and 4 by installing their new release into a new versioned
 directory and updating the corresponding launcher or symlink. Download and
 install the matching SDK and web release tarballs before restarting
 `openchamber-internetisalie.service`. Upgrade pieces 2 and 3 with the one-shot
-authenticated plugin command. Upgrade piece 5 from **Settings -> Extensions**.
+authenticated plugin command.
 
-To disable the viewer, disable or remove the Git extension in OpenChamber. To
+To hide the viewer, hide **Agent PTYs** in the work-status section settings. To
 disable PTY tools and bridge routes, remove
 `@internetisalie/opencode-pty-bridge` from OpenCode's plugin list and restart
 OpenCode. The viewer owns no PTY process or persisted PTY data, so rollback
