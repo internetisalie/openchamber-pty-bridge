@@ -13,7 +13,8 @@ The complete setup has five pieces: custom OpenCode, `opencode-pty`, the
 OpenCode bridge, OpenChamber, and this Git-installed extension. Follow
 [INSTALLATION.md](./INSTALLATION.md) for the exact versions, one-shot GitHub
 Packages authentication, tokenless systemd service, Linux sandbox launcher,
-extension approval, verification, and upgrade procedure.
+custom OpenChamber web service, extension approval, verification, and upgrade
+procedure.
 
 `@internetisalie/opencode-pty-bridge` installs and loads
 `@internetisalie/opencode-pty` transitively. Never list both in OpenCode's

@@ -17,6 +17,8 @@ OpenCode's plugin list; doing so creates duplicate `pty_*` tools.
 
 - Linux x86-64.
 - `gh`, `git`, `tar`, and `sha256sum`.
+- Bun 1.4.2, Node.js 22 or newer, and npm when installing the optional web
+  server.
 - GitHub SSH access from the machine running OpenChamber.
 - A GitHub token with `read:packages`; the existing `gh` login may provide it.
 - OpenChamber web or desktop. Native extensions are not available in VS Code or
@@ -151,7 +153,34 @@ chmod 755 "$HOME/.local/bin/openchamber-internetisalie"
 user-namespace and seccomp sandboxes remain active. Do not use `--no-sandbox`,
 which disables Chromium's sandbox entirely.
 
-For OpenChamber web/server, set the same external runtime in
+### OpenChamber web service
+
+The desktop tarball does not install the separately runnable web server. Build
+the matching custom web package and SDK from the release tag, then install both
+tarballs in one npm transaction. Installing only the web tarball makes npm try
+to fetch the unpublished custom SDK version from the public registry.
+
+```bash
+mkdir -p "$HOME/.local/src"
+git clone --branch v1.24.3-internetisalie.1 --depth 1 \
+  git@github.com:internetisalie/openchamber.git \
+  "$HOME/.local/src/openchamber-internetisalie.1"
+cd "$HOME/.local/src/openchamber-internetisalie.1"
+bun install --frozen-lockfile
+bun run --cwd packages/sdk build
+bun run --cwd packages/web build
+bun pm pack --cwd packages/sdk --destination "$PWD"
+bun pm pack --cwd packages/web --destination "$PWD"
+npm install --global --prefix "$HOME/.npm-global" \
+  "$PWD/openchamber-sdk-1.24.3-internetisalie.1.tgz" \
+  "$PWD/openchamber-web-1.24.3-internetisalie.1.tgz"
+"$HOME/.npm-global/bin/openchamber" --version
+```
+
+The expected version is `1.24.3-internetisalie.1`. Bun's pack command rewrites
+the web package's `workspace:*` SDK dependency to that exact version.
+
+Set the same external OpenCode runtime used by the desktop launcher in
 `~/.config/openchamber/startup.env`:
 
 ```ini
@@ -159,9 +188,47 @@ OPENCODE_HOST="http://127.0.0.1:4096"
 OPENCODE_SKIP_START="true"
 ```
 
-If OpenChamber should manage its own OpenCode process instead, omit those two
-variables and select `~/.local/bin/opencode-internetisalie` in OpenChamber's
-OpenCode CLI settings. Do not use both modes simultaneously.
+Create `~/.config/systemd/user/openchamber-internetisalie.service`:
+
+```ini
+[Unit]
+Wants=opencode.service
+After=opencode.service
+Description=OpenChamber web server
+After=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=-%h/.config/openchamber/startup.env
+ExecStart=/usr/bin/node %h/.npm-global/lib/node_modules/@openchamber/web/bin/cli.js serve --foreground --port 3030
+WorkingDirectory=%h
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+```
+
+If a legacy `openchamber.service` is already enabled on this machine, stop and
+disable it first so that only one process owns port 3030:
+
+```bash
+systemctl --user disable --now openchamber.service
+```
+
+Enable the custom service:
+
+```bash
+systemctl --user daemon-reload
+systemctl --user enable --now openchamber-internetisalie.service
+systemctl --user status openchamber-internetisalie.service --no-pager
+curl --fail-with-body http://127.0.0.1:3030/health
+```
+
+If OpenChamber should manage its own OpenCode process instead, omit the two
+variables from `startup.env` and select
+`~/.local/bin/opencode-internetisalie` in OpenChamber's OpenCode CLI settings.
+Do not use both modes simultaneously.
 
 ## 5. Install the OpenChamber extension
 
@@ -211,9 +278,10 @@ Capability outcomes are deliberately distinct:
 ## Upgrade and rollback
 
 Upgrade pieces 1 and 4 by installing their new release into a new versioned
-directory and updating the corresponding launcher or symlink. Upgrade pieces 2
-and 3 with the one-shot authenticated plugin command. Upgrade piece 5 from
-**Settings -> Extensions**.
+directory and updating the corresponding launcher or symlink. Rebuild and
+install the matching SDK and web tarballs before restarting
+`openchamber-internetisalie.service`. Upgrade pieces 2 and 3 with the one-shot
+authenticated plugin command. Upgrade piece 5 from **Settings -> Extensions**.
 
 To disable the viewer, disable or remove the Git extension in OpenChamber. To
 disable PTY tools and bridge routes, remove
