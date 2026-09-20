@@ -168,7 +168,7 @@ git clone --branch v1.24.3-internetisalie.1 --depth 1 \
 cd "$HOME/.local/src/openchamber-internetisalie.1"
 bun install --frozen-lockfile
 bun run --cwd packages/sdk build
-bun run --cwd packages/web build
+bun run build:web
 bun pm pack --cwd packages/sdk --destination "$PWD"
 bun pm pack --cwd packages/web --destination "$PWD"
 npm install --global --prefix "$HOME/.npm-global" \
