@@ -17,8 +17,7 @@ OpenCode's plugin list; doing so creates duplicate `pty_*` tools.
 
 - Linux x86-64.
 - `gh`, `git`, `tar`, and `sha256sum`.
-- Bun 1.4.2, Node.js 22 or newer, and npm when installing the optional web
-  server.
+- Node.js 22 or newer and npm when installing the optional web server.
 - GitHub SSH access from the machine running OpenChamber.
 - A GitHub token with `read:packages`; the existing `gh` login may provide it.
 - OpenChamber web or desktop. Native extensions are not available in VS Code or
@@ -155,30 +154,30 @@ which disables Chromium's sandbox entirely.
 
 ### OpenChamber web service
 
-The desktop tarball does not install the separately runnable web server. Build
-the matching custom web package and SDK from the release tag, then install both
-tarballs in one npm transaction. Installing only the web tarball makes npm try
-to fetch the unpublished custom SDK version from the public registry.
+The desktop tarball does not install the separately runnable web server.
+Download the matching custom web package and SDK from the release, then install
+both tarballs in one npm transaction. Installing only the web tarball makes npm
+try to fetch the unpublished custom SDK version from the public registry.
 
 ```bash
-mkdir -p "$HOME/.local/src"
-git clone --branch v1.24.3-internetisalie.1 --depth 1 \
-  git@github.com:internetisalie/openchamber.git \
-  "$HOME/.local/src/openchamber-internetisalie.1"
-cd "$HOME/.local/src/openchamber-internetisalie.1"
-bun install --frozen-lockfile
-bun run --cwd packages/sdk build
-bun run build:web
-bun pm pack --cwd packages/sdk --destination "$PWD"
-bun pm pack --cwd packages/web --destination "$PWD"
+mkdir -p "$HOME/.local/lib/openchamber-web-internetisalie.1"
+gh release download v1.24.3-internetisalie.1 \
+  --repo internetisalie/openchamber \
+  --pattern 'openchamber-sdk-1.24.3-internetisalie.1.tgz' \
+  --pattern 'openchamber-web-1.24.3-internetisalie.1.tgz' \
+  --pattern 'openchamber-npm-packages-1.24.3-internetisalie.1.sha256' \
+  --dir "$HOME/.local/lib/openchamber-web-internetisalie.1"
+cd "$HOME/.local/lib/openchamber-web-internetisalie.1"
+sha256sum -c openchamber-npm-packages-1.24.3-internetisalie.1.sha256
 npm install --global --prefix "$HOME/.npm-global" \
   "$PWD/openchamber-sdk-1.24.3-internetisalie.1.tgz" \
   "$PWD/openchamber-web-1.24.3-internetisalie.1.tgz"
 "$HOME/.npm-global/bin/openchamber" --version
 ```
 
-The expected version is `1.24.3-internetisalie.1`. Bun's pack command rewrites
-the web package's `workspace:*` SDK dependency to that exact version.
+The expected version is `1.24.3-internetisalie.1`. The release job packs both
+packages with Bun so the web package's `workspace:*` SDK dependency is rewritten
+to that exact version.
 
 Set the same external OpenCode runtime used by the desktop launcher in
 `~/.config/openchamber/startup.env`:
@@ -278,8 +277,8 @@ Capability outcomes are deliberately distinct:
 ## Upgrade and rollback
 
 Upgrade pieces 1 and 4 by installing their new release into a new versioned
-directory and updating the corresponding launcher or symlink. Rebuild and
-install the matching SDK and web tarballs before restarting
+directory and updating the corresponding launcher or symlink. Download and
+install the matching SDK and web release tarballs before restarting
 `openchamber-internetisalie.service`. Upgrade pieces 2 and 3 with the one-shot
 authenticated plugin command. Upgrade piece 5 from **Settings -> Extensions**.
 
